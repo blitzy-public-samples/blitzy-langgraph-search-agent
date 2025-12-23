@@ -22,10 +22,18 @@ dist/
 build/
 
 # Terraform
+**/.terraform/
 *.tfstate
 *.tfstate.*
-.terraform/
+*.tfvars
+!*.tfvars.example
+*.tfplan
 .terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 
 # IDE
 .vscode/
