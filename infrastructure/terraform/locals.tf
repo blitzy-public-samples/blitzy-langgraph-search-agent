@@ -156,23 +156,23 @@ locals {
   # The coalesce() function allows explicit override via variables while
   # providing sensible defaults based on project name.
   # ---------------------------------------------------------------------------
-  
+
   # ECR repository name for container images
   # Default: {project_name}-backend (e.g., langgraph-search-agent-backend)
   ecr_repository_name = coalesce(var.ecr_repository_name, "${var.project_name}-backend")
-  
+
   # ECS cluster name for container orchestration
   # Default: {project_name}-cluster (e.g., langgraph-search-agent-cluster)
   ecs_cluster_name = coalesce(var.ecs_cluster_name, "${var.project_name}-cluster")
-  
+
   # ECS service name for the backend application
   # Default: {project_name}-service (e.g., langgraph-search-agent-service)
   ecs_service_name = coalesce(var.ecs_service_name, "${var.project_name}-service")
-  
+
   # ECS task definition name
   # Default: {project_name}-task (e.g., langgraph-search-agent-task)
   ecs_task_name = coalesce(var.ecs_task_name, "${var.project_name}-task")
-  
+
   # Container name within the ECS task definition
   # Default: {project_name}-container (e.g., langgraph-search-agent-container)
   container_name = coalesce(var.container_name, "${var.project_name}-container")
@@ -182,7 +182,7 @@ locals {
   # ---------------------------------------------------------------------------
   # S3 bucket and CloudFront naming conventions
   # ---------------------------------------------------------------------------
-  
+
   # Frontend S3 bucket name
   # Default: {project_name}-frontend-{environment}
   # Production example: langgraph-search-agent-frontend-production
@@ -193,22 +193,22 @@ locals {
   # ---------------------------------------------------------------------------
   # VPC and networking component naming
   # ---------------------------------------------------------------------------
-  
+
   # VPC name
   vpc_name = "${var.project_name}-vpc"
-  
+
   # Internet Gateway name
   igw_name = "${var.project_name}-igw"
-  
+
   # NAT Gateway name prefix
   nat_gw_name_prefix = "${var.project_name}-nat"
-  
+
   # Application Load Balancer name
   alb_name = "${var.project_name}-alb"
-  
+
   # Target group name
   target_group_name = "${var.project_name}-tg"
-  
+
   # Security group names
   alb_security_group_name = "${var.project_name}-alb-sg"
   ecs_security_group_name = "${var.project_name}-ecs-sg"
@@ -226,13 +226,13 @@ locals {
   # - newbits = 8: Creates /24 subnets from a /16 VPC
   # - netnum: i + 1 for public (1, 2, ...), i + 10 for private (10, 11, ...)
   # ---------------------------------------------------------------------------
-  
+
   # Public subnet CIDR blocks (for ALB, NAT Gateway)
   # Example with 10.0.0.0/16: [10.0.1.0/24, 10.0.2.0/24]
   public_subnet_cidrs = [
     for i, az in var.availability_zones : cidrsubnet(var.vpc_cidr, 8, i + 1)
   ]
-  
+
   # Private subnet CIDR blocks (for ECS Fargate tasks)
   # Example with 10.0.0.0/16: [10.0.10.0/24, 10.0.11.0/24]
   private_subnet_cidrs = [
@@ -244,11 +244,11 @@ locals {
   # ---------------------------------------------------------------------------
   # CloudWatch log group and alarm naming
   # ---------------------------------------------------------------------------
-  
+
   # CloudWatch log group name for ECS container logs
   # Pattern: /ecs/{project_name}
   log_group_name = "/ecs/${var.project_name}"
-  
+
   # CloudWatch alarm name prefix
   alarm_name_prefix = "${var.project_name}-${var.environment}"
 
@@ -257,13 +257,13 @@ locals {
   # ---------------------------------------------------------------------------
   # IAM role and policy naming conventions
   # ---------------------------------------------------------------------------
-  
+
   # ECS task execution role name
   ecs_task_execution_role_name = "${var.project_name}-ecs-task-execution-role"
-  
+
   # ECS task role name
   ecs_task_role_name = "${var.project_name}-ecs-task-role"
-  
+
   # GitHub Actions OIDC role name
   github_actions_role_name = "${var.project_name}-github-actions-role"
 
@@ -272,10 +272,10 @@ locals {
   # ---------------------------------------------------------------------------
   # Secret naming conventions for API keys
   # ---------------------------------------------------------------------------
-  
+
   # OpenAI API key secret name
   openai_secret_name = "${var.project_name}/${var.environment}/openai-api-key"
-  
+
   # Tavily API key secret name
   tavily_secret_name = "${var.project_name}/${var.environment}/tavily-api-key"
 
@@ -284,7 +284,7 @@ locals {
   # ---------------------------------------------------------------------------
   # DynamoDB table naming
   # ---------------------------------------------------------------------------
-  
+
   # DynamoDB table name (matches backend/app/config.py)
   dynamodb_table_name = coalesce(var.dynamodb_table_name, "langgraph-conversations")
 
@@ -293,10 +293,10 @@ locals {
   # ---------------------------------------------------------------------------
   # S3 bucket and DynamoDB table for Terraform state management
   # ---------------------------------------------------------------------------
-  
+
   # Terraform state S3 bucket name
   terraform_state_bucket = "${var.project_name}-terraform-state"
-  
+
   # Terraform state lock DynamoDB table name
   terraform_lock_table = "${var.project_name}-terraform-locks"
 
@@ -305,7 +305,7 @@ locals {
   # ---------------------------------------------------------------------------
   # Merged auto-scaling settings combining environment defaults with overrides
   # ---------------------------------------------------------------------------
-  
+
   # Final auto-scaling configuration (environment defaults with variable overrides)
   autoscaling_config = {
     min_capacity       = coalesce(var.min_capacity, local.current_env_config.min_capacity)
@@ -322,13 +322,13 @@ locals {
   # ---------------------------------------------------------------------------
   # Container runtime settings for ECS task definition
   # ---------------------------------------------------------------------------
-  
+
   # Container port (FastAPI default)
   container_port = coalesce(var.container_port, 8000)
-  
+
   # Health check path (FastAPI health endpoint)
   health_check_path = coalesce(var.health_check_path, "/health")
-  
+
   # Health check configuration for target group
   health_check_config = {
     enabled             = true
@@ -347,10 +347,10 @@ locals {
   # ---------------------------------------------------------------------------
   # Processed list of availability zones for subnet distribution
   # ---------------------------------------------------------------------------
-  
+
   # Number of availability zones to use
   az_count = length(var.availability_zones)
-  
+
   # Map of availability zone index to name for resource naming
   az_map = {
     for i, az in var.availability_zones : i => az
