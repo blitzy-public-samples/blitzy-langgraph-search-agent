@@ -236,18 +236,18 @@ module "frontend" {
 module "iam" {
   source = "./modules/iam"
 
-  project_name               = var.project_name
-  environment                = var.environment
-  github_org                 = var.github_org
-  github_repo                = var.github_repo
-  ecr_repository_arn         = module.ecr.repository_arn
-  s3_bucket_arn              = module.frontend.bucket_arn
+  project_name                = var.project_name
+  environment                 = var.environment
+  github_org                  = var.github_org
+  github_repo                 = var.github_repo
+  ecr_repository_arn          = module.ecr.repository_arn
+  s3_bucket_arn               = module.frontend.bucket_arn
   cloudfront_distribution_arn = module.frontend.distribution_arn
-  ecs_cluster_arn            = "" # Will be set after ECS cluster creation via data source or targeted apply
-  ecs_service_arn            = "" # Will be set after ECS service creation via data source or targeted apply
-  dynamodb_table_arn         = module.database.table_arn
-  secrets_arns               = values(module.secrets.secret_arns)
-  log_group_arn              = module.monitoring.log_group_arn
+  ecs_cluster_arn             = "" # Will be set after ECS cluster creation via data source or targeted apply
+  ecs_service_arn             = "" # Will be set after ECS service creation via data source or targeted apply
+  dynamodb_table_arn          = module.database.table_arn
+  secrets_arns                = values(module.secrets.secret_arns)
+  log_group_arn               = module.monitoring.log_group_arn
 
   tags = local.common_tags
 
