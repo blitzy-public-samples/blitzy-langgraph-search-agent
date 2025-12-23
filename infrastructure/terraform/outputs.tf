@@ -73,6 +73,11 @@ output "alb_arn" {
   value       = module.ecs_fargate.alb_arn
 }
 
+output "alb_zone_id" {
+  description = "Hosted zone ID of the Application Load Balancer for Route53 alias records"
+  value       = module.ecs_fargate.alb_zone_id
+}
+
 # -----------------------------------------------------------------------------
 # Frontend Hosting Outputs
 # -----------------------------------------------------------------------------
@@ -130,6 +135,7 @@ output "private_subnet_ids" {
 output "github_actions_role_arn" {
   description = "ARN of the IAM role for GitHub Actions OIDC authentication"
   value       = module.iam.github_actions_role_arn
+  sensitive   = true
 }
 
 output "ecs_task_execution_role_arn" {
@@ -167,6 +173,12 @@ output "openai_secret_arn" {
 output "tavily_secret_arn" {
   description = "ARN of the Tavily API key secret"
   value       = module.secrets.tavily_secret_arn
+  sensitive   = true
+}
+
+output "secrets_arns" {
+  description = "Map of all secret ARNs for reference by ECS task definitions"
+  value       = module.secrets.secret_arns
   sensitive   = true
 }
 
