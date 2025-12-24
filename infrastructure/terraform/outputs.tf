@@ -205,7 +205,7 @@ output "terraform_state_bucket" {
 
 output "terraform_lock_table" {
   description = "Name of the DynamoDB table for Terraform state locking"
-  value       = module.storage.lock_table_name
+  value       = module.storage.dynamodb_lock_table_name
 }
 
 # -----------------------------------------------------------------------------
