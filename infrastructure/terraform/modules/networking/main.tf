@@ -203,28 +203,47 @@ resource "aws_security_group" "alb" {
 # -----------------------------------------------------------------------------
 # ECS Security Group
 # -----------------------------------------------------------------------------
+# Security group for ECS Fargate tasks running the LangGraph Search Agent backend.
+# Strictly controls traffic:
+# - Ingress: Only from ALB on container port (8000 by default)
+# - Egress: Only HTTPS (443) for external API calls (OpenAI, Tavily, AWS APIs)
+#
+# Reference: Agent Action Plan Section 0.4.4 - Network Security
+# -----------------------------------------------------------------------------
 resource "aws_security_group" "ecs" {
   name        = "${var.project_name}-ecs-sg"
-  description = "Security group for ECS Fargate tasks"
+  description = "Security group for ECS Fargate tasks - allows traffic from ALB and HTTPS egress"
   vpc_id      = aws_vpc.main.id
 
+  # Ingress rule: Allow traffic only from the ALB on the container port
+  # This ensures ECS tasks are not directly accessible from the internet
   ingress {
-    description     = "Traffic from ALB"
+    description     = "Allow traffic from ALB on container port"
     from_port       = var.container_port
     to_port         = var.container_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
 
+  # Egress rule: HTTPS (port 443) for external API calls
+  # Required for:
+  # - OpenAI API calls (api.openai.com)
+  # - Tavily API calls (api.tavily.com)
+  # - AWS API calls (ECR, CloudWatch, Secrets Manager)
+  # Reference: Agent Action Plan Section 0.4.4 - ECS Egress rule
   egress {
-    description = "Allow all outbound traffic (for API calls)"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS for external API calls (OpenAI, Tavily, AWS APIs)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(local.merged_tags, {
     Name = "${var.project_name}-ecs-sg"
   })
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
