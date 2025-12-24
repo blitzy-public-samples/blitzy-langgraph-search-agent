@@ -218,7 +218,11 @@ resource "aws_ecs_service" "main" {
   tags = local.merged_tags
 
   lifecycle {
-    ignore_changes = [desired_count]
+    # Ignore changes to task_definition to allow CI/CD pipelines to update
+    # the container image without Terraform reverting it.
+    # Also ignore desired_count to allow auto-scaling to adjust task count
+    # without Terraform resetting it on the next apply.
+    ignore_changes = [task_definition, desired_count]
   }
 }
 
