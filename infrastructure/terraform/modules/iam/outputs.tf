@@ -42,7 +42,7 @@ output "oidc_provider_arn" {
         "Federated": "<this_arn>"
       }
   EOT
-  value = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+  value       = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
 
 # Alias for backward compatibility and explicit naming
@@ -54,7 +54,7 @@ output "github_oidc_provider_arn" {
     OIDC provider for clarity in configurations that integrate multiple
     OIDC providers.
   EOT
-  value = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+  value       = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 }
 
 # =============================================================================
@@ -85,10 +85,10 @@ output "github_actions_role_arn" {
     Example workflow usage:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: $${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-1
   EOT
-  value = aws_iam_role.github_actions.arn
+  value       = aws_iam_role.github_actions.arn
 }
 
 output "github_actions_role_name" {
@@ -100,7 +100,7 @@ output "github_actions_role_name" {
     
     Format: {project_name}-github-actions-role
   EOT
-  value = aws_iam_role.github_actions.name
+  value       = aws_iam_role.github_actions.name
 }
 
 output "github_actions_role_id" {
@@ -110,7 +110,7 @@ output "github_actions_role_id" {
     This is the stable identifier that doesn't change even if
     the role is renamed. Useful for IAM policy conditions.
   EOT
-  value = aws_iam_role.github_actions.unique_id
+  value       = aws_iam_role.github_actions.unique_id
 }
 
 # =============================================================================
@@ -137,7 +137,7 @@ output "task_execution_role_arn" {
     Reference in ECS task definition:
       "executionRoleArn": "<this_arn>"
   EOT
-  value = aws_iam_role.ecs_task_execution.arn
+  value       = aws_iam_role.ecs_task_execution.arn
 }
 
 output "task_execution_role_name" {
@@ -149,7 +149,7 @@ output "task_execution_role_name" {
     
     Format: {project_name}-ecs-task-execution-role
   EOT
-  value = aws_iam_role.ecs_task_execution.name
+  value       = aws_iam_role.ecs_task_execution.name
 }
 
 output "task_execution_role_id" {
@@ -159,7 +159,7 @@ output "task_execution_role_id" {
     This is the stable identifier that doesn't change even if
     the role is renamed.
   EOT
-  value = aws_iam_role.ecs_task_execution.unique_id
+  value       = aws_iam_role.ecs_task_execution.unique_id
 }
 
 # =============================================================================
@@ -185,7 +185,7 @@ output "task_role_arn" {
     Reference in ECS task definition:
       "taskRoleArn": "<this_arn>"
   EOT
-  value = aws_iam_role.ecs_task.arn
+  value       = aws_iam_role.ecs_task.arn
 }
 
 output "task_role_name" {
@@ -197,7 +197,7 @@ output "task_role_name" {
     
     Format: {project_name}-ecs-task-role
   EOT
-  value = aws_iam_role.ecs_task.name
+  value       = aws_iam_role.ecs_task.name
 }
 
 output "task_role_id" {
@@ -207,7 +207,7 @@ output "task_role_id" {
     This is the stable identifier that doesn't change even if
     the role is renamed.
   EOT
-  value = aws_iam_role.ecs_task.unique_id
+  value       = aws_iam_role.ecs_task.unique_id
 }
 
 # =============================================================================
