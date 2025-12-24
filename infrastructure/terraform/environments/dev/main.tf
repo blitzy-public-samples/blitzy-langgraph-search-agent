@@ -545,3 +545,98 @@ output "secrets_arns" {
   value       = module.infrastructure.secrets_arns
   sensitive   = true
 }
+
+output "openai_secret_arn" {
+  description = "ARN of the OpenAI API key secret"
+  value       = module.infrastructure.openai_secret_arn
+  sensitive   = true
+}
+
+output "tavily_secret_arn" {
+  description = "ARN of the Tavily API key secret"
+  value       = module.infrastructure.tavily_secret_arn
+  sensitive   = true
+}
+
+# -----------------------------------------------------------------------------
+# Monitoring Outputs
+# -----------------------------------------------------------------------------
+output "log_group_name" {
+  description = "Name of the CloudWatch log group for ECS containers"
+  value       = module.infrastructure.log_group_name
+}
+
+output "log_group_arn" {
+  description = "ARN of the CloudWatch log group"
+  value       = module.infrastructure.log_group_arn
+}
+
+# -----------------------------------------------------------------------------
+# Terraform State Backend Outputs
+# -----------------------------------------------------------------------------
+output "terraform_state_bucket" {
+  description = "Name of the S3 bucket for Terraform state storage"
+  value       = module.infrastructure.terraform_state_bucket
+}
+
+output "terraform_lock_table" {
+  description = "Name of the DynamoDB table for Terraform state locking"
+  value       = module.infrastructure.terraform_lock_table
+}
+
+# -----------------------------------------------------------------------------
+# Additional Networking Outputs
+# -----------------------------------------------------------------------------
+output "public_subnet_ids" {
+  description = "IDs of the public subnets"
+  value       = module.infrastructure.public_subnet_ids
+}
+
+output "private_subnet_ids" {
+  description = "IDs of the private subnets"
+  value       = module.infrastructure.private_subnet_ids
+}
+
+output "alb_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = module.infrastructure.alb_arn
+}
+
+# -----------------------------------------------------------------------------
+# Additional ECR Outputs
+# -----------------------------------------------------------------------------
+output "ecr_repository_name" {
+  description = "Name of the ECR repository"
+  value       = module.infrastructure.ecr_repository_name
+}
+
+# -----------------------------------------------------------------------------
+# Additional Frontend Outputs
+# -----------------------------------------------------------------------------
+output "cloudfront_distribution_arn" {
+  description = "ARN of the CloudFront distribution"
+  value       = module.infrastructure.cloudfront_distribution_arn
+}
+
+output "frontend_url" {
+  description = "URL of the frontend application"
+  value       = module.infrastructure.frontend_url
+}
+
+# -----------------------------------------------------------------------------
+# Application Outputs
+# -----------------------------------------------------------------------------
+output "backend_url" {
+  description = "URL of the backend API (via ALB)"
+  value       = module.infrastructure.backend_url
+}
+
+output "aws_region" {
+  description = "AWS region where infrastructure is deployed"
+  value       = module.infrastructure.aws_region
+}
+
+output "environment" {
+  description = "Environment name (dev, staging, production)"
+  value       = module.infrastructure.environment
+}
