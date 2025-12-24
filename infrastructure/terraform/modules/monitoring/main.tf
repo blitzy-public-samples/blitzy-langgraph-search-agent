@@ -48,16 +48,17 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   namespace           = "AWS/ECS"
   period              = var.alarm_period_seconds
   statistic           = "Average"
-  threshold           = var.cpu_alarm_threshold
-  alarm_description   = "ECS CPU utilization is above ${var.cpu_alarm_threshold}%"
-  treat_missing_data  = "notBreaching"
+  threshold           = var.cpu_threshold
+  alarm_description   = "ECS CPU utilization is above ${var.cpu_threshold}%"
+  treat_missing_data  = var.treat_missing_data
+  datapoints_to_alarm = var.alarm_datapoints_to_alarm
 
-  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
 
   dimensions = {
-    ClusterName = "${var.project_name}-cluster"
-    ServiceName = "${var.project_name}-service"
+    ClusterName = var.ecs_cluster_name != "" ? var.ecs_cluster_name : "${var.project_name}-cluster"
+    ServiceName = var.ecs_service_name != "" ? var.ecs_service_name : "${var.project_name}-service"
   }
 
   tags = local.merged_tags
@@ -73,16 +74,17 @@ resource "aws_cloudwatch_metric_alarm" "memory_high" {
   namespace           = "AWS/ECS"
   period              = var.alarm_period_seconds
   statistic           = "Average"
-  threshold           = var.memory_alarm_threshold
-  alarm_description   = "ECS memory utilization is above ${var.memory_alarm_threshold}%"
-  treat_missing_data  = "notBreaching"
+  threshold           = var.memory_threshold
+  alarm_description   = "ECS memory utilization is above ${var.memory_threshold}%"
+  treat_missing_data  = var.treat_missing_data
+  datapoints_to_alarm = var.alarm_datapoints_to_alarm
 
-  alarm_actions = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != "" ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = var.alarm_actions
+  ok_actions    = var.ok_actions
 
   dimensions = {
-    ClusterName = "${var.project_name}-cluster"
-    ServiceName = "${var.project_name}-service"
+    ClusterName = var.ecs_cluster_name != "" ? var.ecs_cluster_name : "${var.project_name}-cluster"
+    ServiceName = var.ecs_service_name != "" ? var.ecs_service_name : "${var.project_name}-service"
   }
 
   tags = local.merged_tags
