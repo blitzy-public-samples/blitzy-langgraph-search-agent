@@ -56,6 +56,28 @@ variable "repository_policy" {
   default     = null
 }
 
+variable "encryption_type" {
+  description = "Type of encryption for the ECR repository (AES256 or KMS)"
+  type        = string
+  default     = "AES256"
+
+  validation {
+    condition     = contains(["AES256", "KMS"], var.encryption_type)
+    error_message = "Encryption type must be either AES256 or KMS."
+  }
+}
+
+variable "untagged_image_retention_days" {
+  description = "Number of days to retain untagged images before expiration"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.untagged_image_retention_days >= 1 && var.untagged_image_retention_days <= 365
+    error_message = "Untagged image retention days must be between 1 and 365."
+  }
+}
+
 variable "tags" {
   description = "Tags to apply to ECR resources"
   type        = map(string)
