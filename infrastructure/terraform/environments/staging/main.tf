@@ -147,10 +147,10 @@ module "infrastructure" {
   #----------------------------------------------------------------------------
   # Health Check Configuration
   #----------------------------------------------------------------------------
-  health_check_path              = var.health_check_path
-  health_check_interval          = var.health_check_interval
-  health_check_timeout           = var.health_check_timeout
-  health_check_healthy_threshold = var.health_check_healthy_threshold
+  health_check_path                = var.health_check_path
+  health_check_interval            = var.health_check_interval
+  health_check_timeout             = var.health_check_timeout
+  health_check_healthy_threshold   = var.health_check_healthy_threshold
   health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
 
   #----------------------------------------------------------------------------
@@ -191,9 +191,9 @@ module "infrastructure" {
   #----------------------------------------------------------------------------
   # Database Configuration
   #----------------------------------------------------------------------------
-  dynamodb_table_name   = var.dynamodb_table_name
-  dynamodb_billing_mode = var.dynamodb_billing_mode
-  dynamodb_ttl_enabled  = var.dynamodb_ttl_enabled
+  dynamodb_table_name    = var.dynamodb_table_name
+  dynamodb_billing_mode  = var.dynamodb_billing_mode
+  dynamodb_ttl_enabled   = var.dynamodb_ttl_enabled
   dynamodb_ttl_attribute = var.dynamodb_ttl_attribute
 
   #----------------------------------------------------------------------------
@@ -205,9 +205,9 @@ module "infrastructure" {
   #----------------------------------------------------------------------------
   # Monitoring Configuration
   #----------------------------------------------------------------------------
-  log_retention_days       = var.log_retention_days
+  log_retention_days        = var.log_retention_days
   enable_container_insights = var.enable_container_insights
-  enable_execute_command   = var.enable_execute_command
+  enable_execute_command    = var.enable_execute_command
 
   #----------------------------------------------------------------------------
   # Secrets Configuration
