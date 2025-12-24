@@ -209,12 +209,15 @@ variable "rotation_days" {
 # =============================================================================
 
 variable "additional_secrets" {
-  description = "Map of additional secrets to create. Key is the secret identifier, value is a map with 'name', 'description', and optional 'value' fields."
+  description = "Map of additional secrets to create. Key is the secret identifier, value is a map with 'name', 'description', and optional 'value' fields. Note: The 'value' field contains sensitive data that will be stored in AWS Secrets Manager."
   type = map(object({
     name        = string
     description = optional(string, "")
     value       = optional(string, "")
   }))
-  default   = {}
-  sensitive = true
+  default = {}
+  # Note: Cannot mark as sensitive because for_each requires non-sensitive keys.
+  # The actual secret values are protected by aws_secretsmanager_secret_version
+  # resource and the ignore_changes lifecycle rule. Secret values should be
+  # updated via AWS Console/CLI after initial provisioning.
 }
