@@ -96,6 +96,14 @@ output "target_group_name" {
 }
 
 # -----------------------------------------------------------------------------
+# HTTP Listener Outputs
+# -----------------------------------------------------------------------------
+output "listener_arn" {
+  description = "ARN of the ALB HTTP listener"
+  value       = aws_lb_listener.http.arn
+}
+
+# -----------------------------------------------------------------------------
 # Auto Scaling Outputs
 # -----------------------------------------------------------------------------
 output "autoscaling_target_resource_id" {
