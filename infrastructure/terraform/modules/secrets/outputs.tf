@@ -28,15 +28,18 @@ output "secret_arns" {
 # =============================================================================
 # INDIVIDUAL SECRET ARN OUTPUTS
 # =============================================================================
+# Individual ARN outputs for direct reference by IAM policies and other modules.
+# Uses consistent naming: {service}_api_key_secret_arn
+# =============================================================================
 
-output "openai_secret_arn" {
-  description = "ARN of the OpenAI API key secret for IAM policy attachment"
+output "openai_api_key_secret_arn" {
+  description = "ARN of the OpenAI API key secret (aws_secretsmanager_secret.openai.arn) for IAM policy attachment and ECS task definition secret references"
   value       = var.create_openai_secret ? aws_secretsmanager_secret.openai[0].arn : ""
   sensitive   = true
 }
 
-output "tavily_secret_arn" {
-  description = "ARN of the Tavily API key secret for IAM policy attachment"
+output "tavily_api_key_secret_arn" {
+  description = "ARN of the Tavily API key secret (aws_secretsmanager_secret.tavily.arn) for IAM policy attachment and ECS task definition secret references"
   value       = var.create_tavily_secret ? aws_secretsmanager_secret.tavily[0].arn : ""
   sensitive   = true
 }
@@ -44,14 +47,17 @@ output "tavily_secret_arn" {
 # =============================================================================
 # SECRET NAME OUTPUTS
 # =============================================================================
+# Secret name outputs for reference, logging, and AWS CLI commands.
+# Uses consistent naming: {service}_api_key_secret_name
+# =============================================================================
 
-output "openai_secret_name" {
-  description = "Name of the OpenAI API key secret"
+output "openai_api_key_secret_name" {
+  description = "Name of the OpenAI API key secret for reference and AWS CLI/Console lookup"
   value       = var.create_openai_secret ? aws_secretsmanager_secret.openai[0].name : ""
 }
 
-output "tavily_secret_name" {
-  description = "Name of the Tavily API key secret"
+output "tavily_api_key_secret_name" {
+  description = "Name of the Tavily API key secret for reference and AWS CLI/Console lookup"
   value       = var.create_tavily_secret ? aws_secretsmanager_secret.tavily[0].name : ""
 }
 
