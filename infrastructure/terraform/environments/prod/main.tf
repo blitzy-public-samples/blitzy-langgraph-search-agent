@@ -117,10 +117,10 @@ module "infrastructure" {
   max_capacity     = var.max_capacity # 10 for production (scale to handle load)
 
   # Health check configuration
-  health_check_path               = var.health_check_path
-  health_check_interval           = var.health_check_interval
-  health_check_timeout            = var.health_check_timeout
-  health_check_healthy_threshold  = var.health_check_healthy_threshold
+  health_check_path                = var.health_check_path
+  health_check_interval            = var.health_check_interval
+  health_check_timeout             = var.health_check_timeout
+  health_check_healthy_threshold   = var.health_check_healthy_threshold
   health_check_unhealthy_threshold = var.health_check_unhealthy_threshold
 
   # ---------------------------------------------------------------------------
@@ -155,16 +155,16 @@ module "infrastructure" {
   # GitHub OIDC Configuration
   # Enables secure CI/CD authentication without long-lived credentials
   # ---------------------------------------------------------------------------
-  github_org            = var.github_org
-  github_repo           = var.github_repo
+  github_org             = var.github_org
+  github_repo            = var.github_repo
   github_oidc_thumbprint = var.github_oidc_thumbprint
 
   # ---------------------------------------------------------------------------
   # Database Configuration
   # ---------------------------------------------------------------------------
-  dynamodb_table_name   = var.dynamodb_table_name
-  dynamodb_billing_mode = var.dynamodb_billing_mode
-  dynamodb_ttl_enabled  = var.dynamodb_ttl_enabled
+  dynamodb_table_name    = var.dynamodb_table_name
+  dynamodb_billing_mode  = var.dynamodb_billing_mode
+  dynamodb_ttl_enabled   = var.dynamodb_ttl_enabled
   dynamodb_ttl_attribute = var.dynamodb_ttl_attribute
 
   # ---------------------------------------------------------------------------
@@ -177,9 +177,9 @@ module "infrastructure" {
   # Monitoring Configuration
   # Production uses longer retention for compliance and troubleshooting
   # ---------------------------------------------------------------------------
-  log_retention_days       = var.log_retention_days
+  log_retention_days        = var.log_retention_days
   enable_container_insights = var.enable_container_insights
-  enable_execute_command   = var.enable_execute_command
+  enable_execute_command    = var.enable_execute_command
 
   # ---------------------------------------------------------------------------
   # Secrets Configuration
