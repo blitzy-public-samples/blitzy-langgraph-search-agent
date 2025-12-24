@@ -36,14 +36,14 @@ variable "project_name" {
 variable "environment" {
   description = <<-EOT
     Deployment environment identifier used for resource tagging and
-    environment-specific configuration. Must be one of: dev, staging, prod.
+    environment-specific configuration. Must be one of: dev, staging, prod, production.
     This value is used in the common_tags applied to all resources.
   EOT
   type        = string
 
   validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Environment must be one of: dev, staging, prod."
+    condition     = contains(["dev", "staging", "prod", "production"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod, production."
   }
 }
 

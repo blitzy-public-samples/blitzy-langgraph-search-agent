@@ -166,13 +166,13 @@ output "dynamodb_table_arn" {
 # -----------------------------------------------------------------------------
 output "openai_secret_arn" {
   description = "ARN of the OpenAI API key secret"
-  value       = module.secrets.openai_secret_arn
+  value       = module.secrets.openai_api_key_secret_arn
   sensitive   = true
 }
 
 output "tavily_secret_arn" {
   description = "ARN of the Tavily API key secret"
-  value       = module.secrets.tavily_secret_arn
+  value       = module.secrets.tavily_api_key_secret_arn
   sensitive   = true
 }
 
