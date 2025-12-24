@@ -43,3 +43,8 @@ output "oai_iam_arn" {
   description = "IAM ARN of the Origin Access Identity"
   value       = aws_cloudfront_origin_access_identity.frontend.iam_arn
 }
+
+output "origin_access_identity_path" {
+  description = "CloudFront origin access identity path for S3 bucket policy reference"
+  value       = aws_cloudfront_origin_access_identity.frontend.cloudfront_access_identity_path
+}
