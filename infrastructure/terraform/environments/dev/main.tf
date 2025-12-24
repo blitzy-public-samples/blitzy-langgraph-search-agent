@@ -484,7 +484,7 @@ output "cloudfront_distribution_id" {
 
 output "cloudfront_distribution_domain" {
   description = "CloudFront distribution domain name for application access"
-  value       = module.infrastructure.cloudfront_distribution_domain
+  value       = module.infrastructure.cloudfront_domain_name
 }
 
 # -----------------------------------------------------------------------------
