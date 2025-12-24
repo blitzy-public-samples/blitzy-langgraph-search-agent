@@ -18,16 +18,21 @@ jobs:
   deploy:
     name: Deploy Backend
     runs-on: ubuntu-latest
+    # OIDC permissions for AWS authentication - eliminates long-lived credentials
+    permissions:
+      id-token: write   # Required for OIDC token generation for AWS authentication
+      contents: read    # Required for actions/checkout to access repository
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
+      # Uses OIDC authentication - no long-lived AWS credentials required
+      # AWS_ROLE_ARN secret is provided by Terraform output (module.iam.github_actions_role_arn)
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to Amazon ECR
