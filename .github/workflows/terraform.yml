@@ -1,0 +1,219 @@
+# Terraform CI/CD Workflow
+# This workflow manages Terraform infrastructure automation for the LangGraph Search Agent
+# - Runs terraform plan on pull requests to infrastructure/terraform/**
+# - Runs terraform apply on merges to main branch
+# - Uses OIDC authentication for AWS credentials (no long-lived credentials)
+# - Posts plan output as PR comments for review before merge
+
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/terraform/**'
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/terraform/**'
+
+# Permissions required for OIDC authentication and PR comments
+permissions:
+  id-token: write        # Required for OIDC token generation for AWS authentication
+  contents: read         # Required for repository checkout
+  pull-requests: write   # Required for posting plan output as PR comments
+
+env:
+  TF_VERSION: "1.5.0"
+  AWS_REGION: us-east-1
+  TF_WORKING_DIR: infrastructure/terraform
+
+jobs:
+  # =============================================================================
+  # Terraform Plan Job
+  # Runs on pull requests to validate and preview infrastructure changes
+  # =============================================================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS credentials using OIDC authentication
+      # This eliminates the need for long-lived AWS access keys
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3: Setup Terraform CLI with specified version
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: true
+
+      # Step 4: Check Terraform formatting
+      # Fails if any files are not properly formatted
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      # Step 5: Initialize Terraform with S3 backend
+      # Uses DynamoDB for state locking to prevent concurrent modifications
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init \
+            -backend-config="bucket=langgraph-search-agent-terraform-state" \
+            -backend-config="key=state/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=langgraph-search-agent-terraform-locks" \
+            -backend-config="encrypt=true"
+
+      # Step 6: Validate Terraform configuration
+      # Checks syntax and internal consistency of configuration files
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      # Step 7: Generate Terraform plan
+      # Creates execution plan showing proposed infrastructure changes
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      # Step 8: Post plan results as PR comment
+      # Provides visibility into infrastructure changes before merge
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Construct the comment body with formatting status and plan output
+            const output = `### Terraform Plan Results 🏗️
+
+            #### Format Check 🖌️: \`${{ steps.fmt.outcome }}\`
+            #### Initialization ⚙️: \`${{ steps.init.outcome }}\`
+            #### Validation 🤖: \`${{ steps.validate.outcome }}\`
+            #### Plan 📖: \`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan Output</summary>
+
+            \`\`\`terraform
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*
+            *Workflow: \`${{ github.workflow }}\`*`;
+
+            // Find existing comment from this workflow to update instead of creating duplicates
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan Results');
+            });
+
+            // Update existing comment or create new one
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output
+              });
+            }
+
+      # Step 9: Fail workflow if plan failed
+      # Ensures PR cannot be merged with failing infrastructure changes
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  # =============================================================================
+  # Terraform Apply Job
+  # Runs on merge to main branch to apply approved infrastructure changes
+  # =============================================================================
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS credentials using OIDC authentication
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3: Setup Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Step 4: Initialize Terraform with S3 backend
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=langgraph-search-agent-terraform-state" \
+            -backend-config="key=state/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=langgraph-search-agent-terraform-locks" \
+            -backend-config="encrypt=true"
+
+      # Step 5: Apply Terraform changes
+      # Auto-approve since changes were reviewed during PR plan phase
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      # Step 6: Output important values for downstream workflows
+      # These outputs can be used by other workflows that depend on infrastructure
+      - name: Export Terraform Outputs
+        id: outputs
+        run: |
+          echo "Exporting Terraform outputs for CI/CD integration..."
+          terraform output -json > terraform-outputs.json
+          
+          # Extract key outputs for logging (sensitive values are masked)
+          echo "ECR Repository URL: $(terraform output -raw ecr_repository_url 2>/dev/null || echo 'Not available')"
+          echo "ECS Cluster ARN: $(terraform output -raw ecs_cluster_arn 2>/dev/null || echo 'Not available')"
+          echo "ALB DNS Name: $(terraform output -raw alb_dns_name 2>/dev/null || echo 'Not available')"
+          echo "CloudFront Distribution ID: $(terraform output -raw cloudfront_distribution_id 2>/dev/null || echo 'Not available')"
+          echo "S3 Frontend Bucket: $(terraform output -raw s3_frontend_bucket_name 2>/dev/null || echo 'Not available')"
