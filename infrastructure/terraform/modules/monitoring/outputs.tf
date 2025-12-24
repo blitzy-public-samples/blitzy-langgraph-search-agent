@@ -15,11 +15,11 @@ output "log_group_arn" {
 }
 
 output "cpu_alarm_arn" {
-  description = "ARN of the CPU high utilization alarm (empty if disabled)"
-  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.cpu_high[0].arn : ""
+  description = "ARN of the CPU utilization alarm (empty if alarms disabled)"
+  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.cpu[0].arn : ""
 }
 
 output "memory_alarm_arn" {
-  description = "ARN of the memory high utilization alarm (empty if disabled)"
-  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.memory_high[0].arn : ""
+  description = "ARN of the memory utilization alarm (empty if alarms disabled)"
+  value       = var.enable_alarms ? aws_cloudwatch_metric_alarm.memory[0].arn : ""
 }
