@@ -27,6 +27,7 @@ build/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+!infrastructure/terraform/environments/**/terraform.tfvars
 *.tfplan
 .terraform.lock.hcl
 crash.log
