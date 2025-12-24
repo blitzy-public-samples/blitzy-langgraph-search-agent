@@ -25,6 +25,12 @@ locals {
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+# Dynamically fetch GitHub OIDC thumbprint from the certificate chain
+# This ensures the thumbprint is always current and eliminates manual updates
+data "tls_certificate" "github" {
+  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+}
+
 # -----------------------------------------------------------------------------
 # GitHub Actions OIDC Provider
 # -----------------------------------------------------------------------------
@@ -32,9 +38,19 @@ data "aws_region" "current" {}
 # without long-lived credentials.
 # -----------------------------------------------------------------------------
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [var.github_oidc_thumbprint]
+  count = var.create_oidc_provider ? 1 : 0
+
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  # Use dynamic thumbprint from tls_certificate data source if available,
+  # otherwise fall back to the provided variable thumbprint
+  thumbprint_list = [
+    coalesce(
+      try(data.tls_certificate.github.certificates[0].sha1_fingerprint, null),
+      var.github_oidc_thumbprint
+    )
+  ]
 
   tags = local.merged_tags
 }
@@ -45,8 +61,15 @@ resource "aws_iam_openid_connect_provider" "github" {
 # Role assumed by GitHub Actions workflows for deployment operations.
 # Trust policy restricts access to specific repository.
 # -----------------------------------------------------------------------------
+# Local value for OIDC provider ARN - handles both created and existing providers
+locals {
+  oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
+}
+
 resource "aws_iam_role" "github_actions" {
-  name = local.github_actions_role_name
+  name                 = local.github_actions_role_name
+  max_session_duration = var.role_max_session_duration
+  permissions_boundary = var.permissions_boundary_arn != "" ? var.permissions_boundary_arn : null
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -54,7 +77,7 @@ resource "aws_iam_role" "github_actions" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = aws_iam_openid_connect_provider.github.arn
+          Federated = local.oidc_provider_arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -62,7 +85,11 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:*"
+            # Support both wildcard (*) and specific branch patterns
+            "token.actions.githubusercontent.com:sub" = [
+              for branch in var.allowed_github_branches :
+              branch == "*" ? "repo:${var.github_org}/${var.github_repo}:*" : "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/${branch}"
+            ]
           }
         }
       }
@@ -74,8 +101,11 @@ resource "aws_iam_role" "github_actions" {
 
 # -----------------------------------------------------------------------------
 # GitHub Actions Role Policy - ECR Permissions
+# Only created when ECR repository ARN is provided
 # -----------------------------------------------------------------------------
 resource "aws_iam_role_policy" "github_actions_ecr" {
+  count = var.ecr_repository_arn != "" ? 1 : 0
+
   name = "${var.project_name}-github-actions-ecr-policy"
   role = aws_iam_role.github_actions.id
 
@@ -83,6 +113,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "ECRAuthToken"
         Effect = "Allow"
         Action = [
           "ecr:GetAuthorizationToken"
@@ -90,6 +121,7 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
         Resource = "*"
       },
       {
+        Sid    = "ECRPullPush"
         Effect = "Allow"
         Action = [
           "ecr:BatchCheckLayerAvailability",
@@ -98,7 +130,10 @@ resource "aws_iam_role_policy" "github_actions_ecr" {
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages"
         ]
         Resource = var.ecr_repository_arn
       }
@@ -115,37 +150,82 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:DescribeTasks",
-          "ecs:ListTasks",
-          "ecs:RegisterTaskDefinition",
-          "ecs:UpdateService"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole"
-        ]
-        Resource = [
-          aws_iam_role.ecs_task_execution.arn,
-          aws_iam_role.ecs_task.arn
-        ]
-      }
-    ]
+    Statement = concat(
+      [
+        {
+          Sid    = "ECSTaskDefinitionOperations"
+          Effect = "Allow"
+          Action = [
+            "ecs:DescribeTaskDefinition",
+            "ecs:RegisterTaskDefinition",
+            "ecs:DeregisterTaskDefinition",
+            "ecs:ListTaskDefinitions"
+          ]
+          Resource = "*"
+        },
+        {
+          Sid    = "ECSServiceOperations"
+          Effect = "Allow"
+          Action = [
+            "ecs:DescribeServices",
+            "ecs:UpdateService",
+            "ecs:ListServices"
+          ]
+          Resource = var.ecs_cluster_arn != "" ? [
+            "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${element(split("/", var.ecs_cluster_arn), length(split("/", var.ecs_cluster_arn)) - 1)}/*"
+          ] : ["*"]
+        },
+        {
+          Sid    = "ECSClusterOperations"
+          Effect = "Allow"
+          Action = [
+            "ecs:DescribeClusters",
+            "ecs:ListClusters"
+          ]
+          Resource = var.ecs_cluster_arn != "" ? [var.ecs_cluster_arn] : ["*"]
+        },
+        {
+          Sid    = "ECSTaskOperations"
+          Effect = "Allow"
+          Action = [
+            "ecs:DescribeTasks",
+            "ecs:ListTasks",
+            "ecs:RunTask",
+            "ecs:StopTask"
+          ]
+          Resource = "*"
+        }
+      ],
+      # Conditionally add PassRole permission based on variable
+      var.enable_pass_role ? [
+        {
+          Sid    = "PassRoleToECS"
+          Effect = "Allow"
+          Action = [
+            "iam:PassRole"
+          ]
+          Resource = [
+            aws_iam_role.ecs_task_execution.arn,
+            aws_iam_role.ecs_task.arn
+          ]
+          Condition = {
+            StringEquals = {
+              "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+            }
+          }
+        }
+      ] : []
+    )
   })
 }
 
 # -----------------------------------------------------------------------------
 # GitHub Actions Role Policy - S3 Permissions
+# Only created when S3 bucket ARN is provided
 # -----------------------------------------------------------------------------
 resource "aws_iam_role_policy" "github_actions_s3" {
+  count = var.s3_bucket_arn != "" ? 1 : 0
+
   name = "${var.project_name}-github-actions-s3-policy"
   role = aws_iam_role.github_actions.id
 
@@ -158,7 +238,9 @@ resource "aws_iam_role_policy" "github_actions_s3" {
           "s3:PutObject",
           "s3:GetObject",
           "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:GetObjectVersion",
+          "s3:ListBucketVersions"
         ]
         Resource = [
           var.s3_bucket_arn,
@@ -171,8 +253,11 @@ resource "aws_iam_role_policy" "github_actions_s3" {
 
 # -----------------------------------------------------------------------------
 # GitHub Actions Role Policy - CloudFront Permissions
+# Only created when CloudFront distribution ARN is provided
 # -----------------------------------------------------------------------------
 resource "aws_iam_role_policy" "github_actions_cloudfront" {
+  count = var.cloudfront_distribution_arn != "" ? 1 : 0
+
   name = "${var.project_name}-github-actions-cloudfront-policy"
   role = aws_iam_role.github_actions.id
 
@@ -184,7 +269,8 @@ resource "aws_iam_role_policy" "github_actions_cloudfront" {
         Action = [
           "cloudfront:CreateInvalidation",
           "cloudfront:GetInvalidation",
-          "cloudfront:ListInvalidations"
+          "cloudfront:ListInvalidations",
+          "cloudfront:GetDistribution"
         ]
         Resource = var.cloudfront_distribution_arn
       }
@@ -199,7 +285,9 @@ resource "aws_iam_role_policy" "github_actions_cloudfront" {
 # write logs to CloudWatch, and read secrets from Secrets Manager.
 # -----------------------------------------------------------------------------
 resource "aws_iam_role" "ecs_task_execution" {
-  name = local.ecs_task_execution_role_name
+  name                 = local.ecs_task_execution_role_name
+  max_session_duration = var.role_max_session_duration
+  permissions_boundary = var.permissions_boundary_arn != "" ? var.permissions_boundary_arn : null
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -251,7 +339,9 @@ resource "aws_iam_role_policy" "ecs_task_execution_secrets" {
 # application at runtime (e.g., DynamoDB access).
 # -----------------------------------------------------------------------------
 resource "aws_iam_role" "ecs_task" {
-  name = local.ecs_task_role_name
+  name                 = local.ecs_task_role_name
+  max_session_duration = var.role_max_session_duration
+  permissions_boundary = var.permissions_boundary_arn != "" ? var.permissions_boundary_arn : null
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -271,6 +361,8 @@ resource "aws_iam_role" "ecs_task" {
 
 # DynamoDB access policy for the task role
 resource "aws_iam_role_policy" "ecs_task_dynamodb" {
+  count = var.dynamodb_table_arn != "" ? 1 : 0
+
   name = "${var.project_name}-ecs-task-dynamodb-policy"
   role = aws_iam_role.ecs_task.id
 
@@ -292,6 +384,32 @@ resource "aws_iam_role_policy" "ecs_task_dynamodb" {
         Resource = [
           var.dynamodb_table_arn,
           "${var.dynamodb_table_arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
+# CloudWatch Logs access policy for the task role
+# Allows the application to create and write logs directly
+resource "aws_iam_role_policy" "ecs_task_cloudwatch" {
+  name = "${var.project_name}-ecs-task-cloudwatch-policy"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = [
+          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*",
+          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*:*"
         ]
       }
     ]
