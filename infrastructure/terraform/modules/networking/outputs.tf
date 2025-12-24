@@ -30,7 +30,7 @@ output "vpc_id" {
     
     Example value: vpc-0abc123def456789
   EOT
-  value = aws_vpc.main.id
+  value       = aws_vpc.main.id
 }
 
 output "vpc_cidr" {
@@ -44,7 +44,7 @@ output "vpc_cidr" {
     
     Default: 10.0.0.0/16 (65,536 IP addresses)
   EOT
-  value = aws_vpc.main.cidr_block
+  value       = aws_vpc.main.cidr_block
 }
 
 output "vpc_cidr_block" {
@@ -52,7 +52,7 @@ output "vpc_cidr_block" {
     Alias for vpc_cidr - The primary CIDR block of the VPC.
     Provided for compatibility with modules expecting this naming convention.
   EOT
-  value = aws_vpc.main.cidr_block
+  value       = aws_vpc.main.cidr_block
 }
 
 output "vpc_arn" {
@@ -64,7 +64,7 @@ output "vpc_arn" {
     - CloudWatch Logs resource policies
     - AWS Config rules targeting this VPC
   EOT
-  value = aws_vpc.main.arn
+  value       = aws_vpc.main.arn
 }
 
 # =============================================================================
@@ -91,7 +91,7 @@ output "public_subnet_ids" {
     - 10.0.1.0/24 in us-east-1a
     - 10.0.2.0/24 in us-east-1b
   EOT
-  value = aws_subnet.public[*].id
+  value       = aws_subnet.public[*].id
 }
 
 output "private_subnet_ids" {
@@ -110,7 +110,7 @@ output "private_subnet_ids" {
     - 10.0.10.0/24 in us-east-1a
     - 10.0.11.0/24 in us-east-1b
   EOT
-  value = aws_subnet.private[*].id
+  value       = aws_subnet.private[*].id
 }
 
 output "public_subnet_cidrs" {
@@ -118,7 +118,7 @@ output "public_subnet_cidrs" {
     List of CIDR blocks for public subnets.
     Useful for security group rule definitions and network planning.
   EOT
-  value = aws_subnet.public[*].cidr_block
+  value       = aws_subnet.public[*].cidr_block
 }
 
 output "private_subnet_cidrs" {
@@ -126,7 +126,7 @@ output "private_subnet_cidrs" {
     List of CIDR blocks for private subnets.
     Useful for security group rule definitions and network planning.
   EOT
-  value = aws_subnet.private[*].cidr_block
+  value       = aws_subnet.private[*].cidr_block
 }
 
 output "availability_zones" {
@@ -139,7 +139,7 @@ output "availability_zones" {
     
     Default: ["us-east-1a", "us-east-1b"]
   EOT
-  value = var.availability_zones
+  value       = var.availability_zones
 }
 
 # =============================================================================
@@ -164,14 +164,14 @@ output "alb_security_group_id" {
     
     Reference: Agent Action Plan Section 0.4.4 - ALB Security Rules
   EOT
-  value = aws_security_group.alb.id
+  value       = aws_security_group.alb.id
 }
 
 output "alb_security_group_arn" {
   description = <<-EOT
     ARN of the ALB security group for IAM policy references.
   EOT
-  value = aws_security_group.alb.arn
+  value       = aws_security_group.alb.arn
 }
 
 output "ecs_security_group_id" {
@@ -190,14 +190,14 @@ output "ecs_security_group_id" {
     
     Reference: Agent Action Plan Section 0.4.4 - ECS Security Rules
   EOT
-  value = aws_security_group.ecs.id
+  value       = aws_security_group.ecs.id
 }
 
 output "ecs_security_group_arn" {
   description = <<-EOT
     ARN of the ECS security group for IAM policy references.
   EOT
-  value = aws_security_group.ecs.arn
+  value       = aws_security_group.ecs.arn
 }
 
 # =============================================================================
@@ -220,14 +220,14 @@ output "internet_gateway_id" {
     - Outbound traffic from ALB to internet
     - NAT Gateway internet connectivity
   EOT
-  value = aws_internet_gateway.main.id
+  value       = aws_internet_gateway.main.id
 }
 
 output "internet_gateway_arn" {
   description = <<-EOT
     ARN of the Internet Gateway for resource tagging and policy references.
   EOT
-  value = aws_internet_gateway.main.arn
+  value       = aws_internet_gateway.main.arn
 }
 
 # =============================================================================
@@ -252,7 +252,7 @@ output "nat_gateway_ids" {
     
     Returns empty list if enable_nat_gateway = false
   EOT
-  value = aws_nat_gateway.main[*].id
+  value       = aws_nat_gateway.main[*].id
 }
 
 output "nat_gateway_id" {
@@ -264,7 +264,7 @@ output "nat_gateway_id" {
     
     Reference: Agent Action Plan Section 0.4.4 - NAT Gateway for private subnets
   EOT
-  value = length(aws_nat_gateway.main) > 0 ? aws_nat_gateway.main[0].id : ""
+  value       = length(aws_nat_gateway.main) > 0 ? aws_nat_gateway.main[0].id : ""
 }
 
 output "nat_gateway_public_ips" {
@@ -276,7 +276,7 @@ output "nat_gateway_public_ips" {
     - Network troubleshooting and traffic analysis
     - Security auditing
   EOT
-  value = aws_eip.nat[*].public_ip
+  value       = aws_eip.nat[*].public_ip
 }
 
 output "nat_gateway_elastic_ip_ids" {
@@ -287,7 +287,7 @@ output "nat_gateway_elastic_ip_ids" {
     - Cost tracking (EIPs incur charges when not attached)
     - IP address management
   EOT
-  value = aws_eip.nat[*].id
+  value       = aws_eip.nat[*].id
 }
 
 # =============================================================================
@@ -307,14 +307,14 @@ output "public_route_table_id" {
     
     Associated with all public subnets for ALB internet connectivity.
   EOT
-  value = aws_route_table.public.id
+  value       = aws_route_table.public.id
 }
 
 output "public_route_table_arn" {
   description = <<-EOT
     ARN of the public route table for resource tagging and policy references.
   EOT
-  value = aws_route_table.public.arn
+  value       = aws_route_table.public.arn
 }
 
 output "private_route_table_ids" {
@@ -331,7 +331,7 @@ output "private_route_table_ids" {
     
     Returns empty list if enable_nat_gateway = false
   EOT
-  value = aws_route_table.private[*].id
+  value       = aws_route_table.private[*].id
 }
 
 output "private_route_table_id" {
@@ -341,7 +341,7 @@ output "private_route_table_id" {
     Convenience output for single NAT Gateway configurations.
     Returns empty string if NAT Gateway is disabled.
   EOT
-  value = length(aws_route_table.private) > 0 ? aws_route_table.private[0].id : ""
+  value       = length(aws_route_table.private) > 0 ? aws_route_table.private[0].id : ""
 }
 
 # =============================================================================
@@ -358,15 +358,15 @@ output "networking_summary" {
     Useful for passing to child modules as a single object.
   EOT
   value = {
-    vpc_id                  = aws_vpc.main.id
-    vpc_cidr                = aws_vpc.main.cidr_block
-    public_subnet_ids       = aws_subnet.public[*].id
-    private_subnet_ids      = aws_subnet.private[*].id
-    alb_security_group_id   = aws_security_group.alb.id
-    ecs_security_group_id   = aws_security_group.ecs.id
-    internet_gateway_id     = aws_internet_gateway.main.id
-    nat_gateway_ids         = aws_nat_gateway.main[*].id
-    availability_zones      = var.availability_zones
+    vpc_id                = aws_vpc.main.id
+    vpc_cidr              = aws_vpc.main.cidr_block
+    public_subnet_ids     = aws_subnet.public[*].id
+    private_subnet_ids    = aws_subnet.private[*].id
+    alb_security_group_id = aws_security_group.alb.id
+    ecs_security_group_id = aws_security_group.ecs.id
+    internet_gateway_id   = aws_internet_gateway.main.id
+    nat_gateway_ids       = aws_nat_gateway.main[*].id
+    availability_zones    = var.availability_zones
   }
 }
 
@@ -385,10 +385,10 @@ output "vpc_config_for_cicd" {
     GitHub Actions workflow consumption without complex parsing.
   EOT
   value = {
-    vpc_id                     = aws_vpc.main.id
-    public_subnet_ids_csv      = join(",", aws_subnet.public[*].id)
-    private_subnet_ids_csv     = join(",", aws_subnet.private[*].id)
-    security_group_alb_id      = aws_security_group.alb.id
-    security_group_ecs_id      = aws_security_group.ecs.id
+    vpc_id                 = aws_vpc.main.id
+    public_subnet_ids_csv  = join(",", aws_subnet.public[*].id)
+    private_subnet_ids_csv = join(",", aws_subnet.private[*].id)
+    security_group_alb_id  = aws_security_group.alb.id
+    security_group_ecs_id  = aws_security_group.ecs.id
   }
 }
