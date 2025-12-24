@@ -172,7 +172,7 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
             "ecs:ListServices"
           ]
           Resource = var.ecs_cluster_arn != "" ? [
-            "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${element(split("/", var.ecs_cluster_arn), length(split("/", var.ecs_cluster_arn)) - 1)}/*"
+            "arn:aws:ecs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:service/${element(split("/", var.ecs_cluster_arn), length(split("/", var.ecs_cluster_arn)) - 1)}/*"
           ] : ["*"]
         },
         {
@@ -408,8 +408,8 @@ resource "aws_iam_role_policy" "ecs_task_cloudwatch" {
           "logs:DescribeLogStreams"
         ]
         Resource = [
-          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*",
-          "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*:*"
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}*:*"
         ]
       }
     ]
