@@ -15,6 +15,12 @@ jobs:
   deploy:
     name: Deploy Frontend
     runs-on: ubuntu-latest
+    
+    # OIDC authentication permissions - enables secure AWS authentication
+    # without requiring long-lived AWS access keys
+    permissions:
+      id-token: write   # Required for requesting OIDC JWT token
+      contents: read    # Required for actions/checkout
 
     steps:
     - name: Checkout
@@ -39,11 +45,13 @@ jobs:
         cd frontend
         npm run build
 
+    # OIDC-based AWS authentication - uses GitHub's OIDC provider
+    # to assume an IAM role without storing long-lived credentials
+    # Required secret: AWS_ROLE_ARN (provided by Terraform output: module.iam.github_actions_role_arn)
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Deploy to S3
