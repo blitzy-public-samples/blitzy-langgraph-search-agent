@@ -176,6 +176,17 @@ variable "index_document" {
   }
 }
 
+variable "default_root_object" {
+  description = "The object that CloudFront returns when a viewer requests the root URL (e.g., https://example.com/). This is typically the same as index_document and defaults to 'index.html' for SPA applications."
+  type        = string
+  default     = "index.html"
+
+  validation {
+    condition     = length(var.default_root_object) > 0 && !can(regex("^/", var.default_root_object))
+    error_message = "Default root object must not be empty and must not start with a forward slash."
+  }
+}
+
 variable "error_document" {
   description = "Error document for static website hosting. For single-page applications (SPA), this should be 'index.html' to enable client-side routing - all 404 errors will serve the main application which handles routing internally."
   type        = string
